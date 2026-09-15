@@ -71,10 +71,6 @@ class IngestResponse(BaseModel):
     chunks_created: Optional[int] = None
 
 
-class ReindexRequest(BaseModel):
-    doc_id: str
-
-
 class UploadIngestResponse(BaseModel):
     filename: str
     chunks_created: int

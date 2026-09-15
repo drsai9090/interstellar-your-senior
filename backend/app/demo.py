@@ -61,6 +61,6 @@ async def demo_info():
         raise HTTPException(status_code=404, detail="Demo is disabled.")
     return {
         "response_mode": "fixture", "corpus_id": CORPUS_ID,
-        "description": "Synthetic documents and author-written provider stub; not live AI or a recorded model run.",
+        "description": "Three fictional workplace policies written for this synthetic demo.",
         "questions": list(ANSWERS), "documents": documents(),
     }

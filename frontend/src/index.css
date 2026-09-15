@@ -1,9 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 :root {
   font-family: 'Inter', system-ui, sans-serif;
+  line-height: 1.5;
   color: #102238;
   background: #f3f6fa;
   font-synthesis: none;
@@ -15,8 +12,10 @@
   --teal: #266958;
 }
 * { box-sizing: border-box; }
+h1, h2, h3, p { margin: 0; }
 body { margin: 0; }
-button, textarea { font: inherit; }
+button, textarea { font: inherit; color: inherit; }
+svg { display: block; }
 button, summary, a { -webkit-tap-highlight-color: transparent; }
 button, summary { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .55; }
@@ -36,16 +35,13 @@ button { transition: background-color .15s, border-color .15s; }
 .repository-link span { padding-left: 10px; }
 main { padding: 0 5%; }
 .intro { display: grid; grid-template-columns: minmax(0, 1fr) 325px; align-items: center; gap: 70px; padding: 51px 0 43px; }
-.eyebrow, .small-label { font-size: 10px; letter-spacing: 1.3px; text-transform: uppercase; font-weight: 600; color: var(--muted); }
-.eyebrow { margin: 0 0 18px; color: var(--blue); }
+.small-label { font-size: 10px; letter-spacing: 1.3px; text-transform: uppercase; font-weight: 600; color: var(--muted); }
 h1 { margin: 0; font-family: 'Space Grotesk', system-ui, sans-serif; font-weight: 500; font-size: clamp(32px, 3.7vw, 51px); letter-spacing: -2px; line-height: 1.13; }
-h1 span { color: var(--blue); }
 .intro-copy { max-width: 570px; margin: 19px 0 0; color: var(--muted); font-size: 13px; line-height: 1.85; }
 .demo-note { border-left: 2px solid #9eb6c9; padding: 4px 0 4px 23px; }
 .demo-tag { display: inline-flex; align-items: center; gap: 8px; color: var(--blue); font-size: 11px; font-weight: 600; }
 .demo-tag > span { width: 6px; height: 6px; background: var(--blue); border-radius: 50%; }
-.demo-note h2 { font-size: 13px; font-weight: 600; margin: 12px 0 7px; }
-.demo-note p { font-size: 12px; line-height: 1.85; margin: 0; color: var(--muted); }
+.demo-note p { font-size: 12px; line-height: 1.85; margin: 8px 0 0; color: var(--muted); }
 .workspace { display: grid; grid-template-columns: minmax(0, 1fr) 325px; border: 1px solid var(--line); border-radius: 12px; background: white; overflow: hidden; box-shadow: 0 10px 30px #10223805; }
 .question-workspace { padding: 28px 30px; min-width: 0; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
@@ -68,10 +64,6 @@ h1 span { color: var(--blue); }
 .suggestion-grid button:hover:not(:disabled) { background: #eef5fa; border-color: #9eb6c9; }
 .request-status { margin: 0; color: var(--blue); font-size: 12px; line-height: 1.7; }
 .request-status:not(:empty) { margin-top: 25px; }
-.answer-empty { text-align: center; margin-top: 26px; padding: 31px 20px 20px; border-top: 1px dashed var(--line); }
-.answer-empty svg { width: 36px; height: 36px; fill: none; stroke: #718da6; stroke-width: 1.4; margin: 0 auto 13px; }
-.answer-empty h3 { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 16px; font-weight: 500; margin: 0 0 8px; }
-.answer-empty p { color: var(--muted); font-size: 12px; line-height: 1.8; max-width: 380px; margin: auto; }
 .corpus-panel { min-width: 0; padding: 28px 23px; background: #f8fafc; border-left: 1px solid var(--line); }
 .corpus-panel .section-heading { margin-bottom: 15px; gap: 8px; }
 .corpus-panel .section-heading h2 { font-size: 14px; }
@@ -85,17 +77,7 @@ summary::-webkit-details-marker { display: none; }
 .corpus-document[open] summary::after { content: '−'; }
 .document-icon { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 22px; height: 25px; border: 1px solid #b8cada; border-radius: 3px; color: var(--blue); font-size: 17px; background: white; }
 .corpus-document-content { white-space: pre-wrap; overflow-wrap: anywhere; border-left: 2px solid #c6d5e3; margin: 0 0 18px 11px; padding-left: 14px; font-size: 11px; line-height: 1.9; color: #364f66; }
-.provenance { margin-top: 21px; }
-.provenance h3, .reading-key h3 { font-size: 11px; font-weight: 600; margin: 0 0 9px; }
-.provenance code { font-family: ui-monospace, monospace; font-size: 10px; color: var(--blue); overflow-wrap: anywhere; }
-.provenance p { margin: 8px 0 0; font-size: 10px; line-height: 1.8; color: var(--muted); }
-.reading-key { margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--line); }
-.reading-key p { color: var(--muted); font-size: 10px; line-height: 1.8; margin: 7px 0; }
-.reading-key strong { color: #364f66; font-weight: 500; }
-.key-dot { display: inline-block; width: 6px; height: 6px; margin-right: 7px; border-radius: 50%; background: #65768a; }
-.key-dot.supported { background: var(--teal); }
-.key-dot.partial { background: #b86c25; }
-.reading-key .key-footnote { padding-top: 8px; font-size: 10px; }
+.provenance { margin-top: 21px; font-size: 11px; line-height: 1.8; color: var(--muted); }
 .answer-card { border-top: 1px solid var(--line); margin-top: 28px; padding-top: 25px; }
 .answer-topline { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
 .support-badge { display: inline-flex; align-items: center; gap: 7px; font-size: 10px; font-weight: 600; color: #455970; background: #edf1f6; padding: 6px 9px; border-radius: 4px; }
@@ -117,8 +99,6 @@ summary::-webkit-details-marker { display: none; }
 .source-content blockquote { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; color: #364f66; line-height: 1.8; margin: 0; }
 .source-meta { display: flex; flex-wrap: wrap; gap: 10px; margin: 11px 0 0; font-size: 9px; color: var(--muted); }
 .no-sources { padding: 13px 15px; margin-top: 20px; background: #f3f6fa; border-radius: 5px; font-size: 11px; color: var(--muted); line-height: 1.8; }
-.query-reference { margin: 22px 0 0; font-size: 9px; line-height: 1.8; color: var(--muted); overflow-wrap: anywhere; }
-.query-reference span { font-family: ui-monospace, monospace; margin-left: 6px; }
 .error-message { margin-top: 20px; background: #fff5f1; border: 1px solid #eac5b6; border-radius: 6px; padding: 14px; font-size: 12px; color: #833b24; line-height: 1.8; }
 .error-message p { margin: 4px 0 8px; }
 .text-button { background: transparent; border: 0; padding: 7px 0; font-size: 11px; font-weight: 600; text-decoration: underline; }
@@ -129,19 +109,16 @@ summary::-webkit-details-marker { display: none; }
   .intro { grid-template-columns: minmax(0, 1fr) 290px; gap: 35px; }
   .workspace { grid-template-columns: minmax(0, 1fr) 290px; }
   .question-workspace { padding: 24px; }
-  .section-heading > .small-label { display: none; }
 }
 @media (max-width: 800px) {
   .intro { grid-template-columns: 1fr; gap: 25px; padding: 34px 0 30px; }
   h1 { font-size: 42px; }
   .intro-copy { max-width: 560px; }
   .demo-note { padding-left: 16px; max-width: 560px; }
-  .demo-note h2 { margin: 6px 0 4px; }
   .workspace { grid-template-columns: 1fr; }
   .corpus-panel { border-left: 0; border-top: 1px solid var(--line); padding: 25px; }
   .corpus-document summary { font-size: 12px; }
-  .corpus-copy, .corpus-document-content, .reading-key p { font-size: 12px; }
-  .provenance p, .reading-key .key-footnote { font-size: 11px; }
+  .corpus-copy, .corpus-document-content { font-size: 12px; }
 }
 @media (max-width: 460px) {
   .masthead { padding-top: 19px; padding-bottom: 19px; gap: 12px; }
@@ -151,7 +128,6 @@ summary::-webkit-details-marker { display: none; }
   .repository-link { font-size: 10px; white-space: nowrap; }
   .repository-link span { padding-left: 2px; }
   h1 { font-size: 36px; letter-spacing: -1.5px; }
-  .eyebrow { font-size: 9px; }
   .question-workspace { padding: 21px 17px; }
   .question-form { padding: 13px; }
   .question-form textarea { font-size: 16px; }
@@ -160,7 +136,6 @@ summary::-webkit-details-marker { display: none; }
   .primary-button { gap: 10px; font-size: 11px; padding: 10px 11px; }
   .suggestion-grid { grid-template-columns: 1fr; }
   .suggestion-grid button { min-height: 48px; font-size: 12px; }
-  .answer-empty { padding: 25px 5px 12px; }
   .corpus-panel { padding: 22px 17px; }
 }
 @media (prefers-reduced-motion: reduce) { button { transition: none; } }

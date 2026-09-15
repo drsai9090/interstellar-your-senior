@@ -77,7 +77,7 @@ async def answer_question(question: str, top_k: int | None = None) -> QueryRespo
     reason = "No relevant evidence was retrieved."
     status = "unsupported"
     sources = []
-    chunks, _ = await retrieve_chunks(question, top_k or settings.top_k_chunks)
+    chunks = await retrieve_chunks(question, top_k or settings.top_k_chunks)
     if chunks:
         try:
             parsed = validate_answer(await generate_answer(question, chunks), chunks)

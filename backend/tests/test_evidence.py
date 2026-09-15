@@ -112,7 +112,7 @@ class ModelContractTests(unittest.TestCase):
                 AsyncMock(return_value=model_json(status="unsupported", cited_chunk_ids=[])),
             ):
                 with self.subTest(provider=provider), patch(
-                    "app.rag.engine.retrieve_chunks", AsyncMock(return_value=([source()], 0.9))
+                    "app.rag.engine.retrieve_chunks", AsyncMock(return_value=[source()])
                 ), patch("app.rag.engine.generate_answer", provider):
                     response = asyncio.run(answer_question("Annual leave?"))
                     self.assertEqual(response.status, "unsupported")
@@ -127,7 +127,7 @@ class ModelContractTests(unittest.TestCase):
         from app.rag.engine import answer_question
 
         with settings_env(DEMO_MODE="false"), patch(
-            "app.rag.engine.retrieve_chunks", AsyncMock(return_value=([], 0.0))
+            "app.rag.engine.retrieve_chunks", AsyncMock(return_value=[])
         ), patch("app.rag.engine.generate_answer", AsyncMock()) as provider:
             response = asyncio.run(answer_question("Annual leave?"))
         provider.assert_not_awaited()
@@ -139,7 +139,7 @@ class ModelContractTests(unittest.TestCase):
 
         with settings_env(DEMO_MODE="false", ANTHROPIC_API_KEY="unused-test-value"), patch(
             "app.rag.engine.retrieve_chunks",
-            AsyncMock(return_value=([source(), source("uncited-source")], 0.9)),
+            AsyncMock(return_value=[source(), source("uncited-source")]),
         ), patch("app.rag.engine.generate_answer", AsyncMock(return_value=model_json())):
             response = asyncio.run(answer_question("Annual leave?"))
         self.assertEqual(response.status, "supported")

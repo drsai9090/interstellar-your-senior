@@ -27,8 +27,6 @@ class Settings(BaseSettings):
     chroma_collection_name: str = "your_senior_docs"
 
     # Server
-    backend_host: str = "0.0.0.0"
-    backend_port: int = 8000
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
 
     # RAG retrieval

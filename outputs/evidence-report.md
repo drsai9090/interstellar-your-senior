@@ -25,7 +25,7 @@ Date: 15 September 2026. Branch: `codex/interstellar-evidence` in `drsai9090/int
 | `python -m unittest discover -s tests -v` (backend) | 19 passed, no skips; real Chroma retrieval plus provider/storage failure mocks |
 | `python -m app.evaluate --output ../outputs/evaluation.json` | 8/8 authored scenarios passed; no live model calls |
 | `node --test src/api/client.test.js` (frontend) | 1 passed, shared-secret absence and request/error handling |
-| `npm run build` (frontend) | Passed, Vite 6.4.3, 31 modules |
+| `npm run build` (frontend) | Passed, Vite 6.4.3, 30 modules |
 | `npm audit --audit-level=moderate` | 0 known vulnerabilities after compatible lockfile fixes and removal of unused React Router |
 | `python -m pip check` | No broken requirements |
 | Backend compile / `git diff --check` / compose config | Passed |
@@ -61,3 +61,9 @@ The built frontend was inspected through the in-app browser at `http://127.0.0.1
 - Full corpus documents expanded, and Ctrl+Enter submitted the expense question successfully.
 - Explicit accessible names were added to source/document summaries after accessibility-tree inspection. Completed answers receive focus and scroll into view.
 - At a 390-pixel viewport, measured document width showed no horizontal overflow. The browser tool's narrow screenshot rendering was duplicated/scaled, so narrow visual appearance is not fully verified. Desktop appearance was inspected.
+
+## Ponytail cleanup
+
+Removed slogans, repeated explanation panels, query-reference display and unused styles. The demo retains one concise synthetic/prewritten-answer disclosure and per-answer source status. Removed the unused Tailwind/PostCSS configuration, 64 dependency packages, the pass-through App component, an unused request model/server settings and the discarded aggregate retrieval score.
+
+Rechecked: 19 backend tests, the frontend client test and build, 8/8 synthetic evaluation cases, zero npm audit findings and compose configuration. Browser checks verified supported/unsupported answers and document expansion; widths of 327 and 1280 pixels had no horizontal overflow.
