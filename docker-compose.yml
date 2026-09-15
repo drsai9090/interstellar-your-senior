@@ -1,51 +1,9 @@
-version: "3.9"
-
 services:
-
-  # ── Backend: FastAPI + ChromaDB + sentence-transformers ─────────────────────
-  backend:
-    build:
-      context: ./backend
-    container_name: your-senior-backend
+  demo:
+    build: .
     ports:
-      - "8000:8000"
-    env_file:
-      - ./backend/.env
+      - "127.0.0.1:8000:8000"
     environment:
-      # Override the persist path to use the named volume below.
-      - CHROMA_PERSIST_DIR=/app/chromadb_store
-      # Allow requests from the Dockerised frontend (port 3000) and local dev.
-      - CORS_ORIGINS=http://localhost:3000,http://localhost:5173,http://localhost:8000
-    volumes:
-      - chromadb_data:/app/chromadb_store
-      # Mount secrets read-only so the service account JSON is available at runtime.
-      - ./backend/secrets:/app/secrets:ro
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
-
-  # ── Frontend: React + Vite (built) served by nginx ──────────────────────────
-  frontend:
-    build:
-      context: ./frontend
-      args:
-        # VITE_ vars are baked into the JS bundle at build time.
-        # The browser calls the backend directly, so use the HOST port (8000).
-        # VITE_API_KEY reads from backend/.env via ${YOUR_SENIOR_API_KEY}.
-        - VITE_API_URL=http://localhost:8000
-        - VITE_API_KEY=${YOUR_SENIOR_API_KEY}
-    container_name: your-senior-frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      backend:
-        condition: service_healthy
-    restart: unless-stopped
-
-volumes:
-  # Named volume keeps ChromaDB data alive across container restarts.
-  chromadb_data:
+      DEMO_MODE: "true"
+    init: true
+    restart: "no"

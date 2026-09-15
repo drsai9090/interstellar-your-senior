@@ -1,0 +1,10 @@
+# Fixed-corpus demo and offline tests. No paid provider or model download.
+fastapi==0.115.5
+uvicorn==0.32.1
+python-multipart==0.0.17
+pydantic==2.10.3
+pydantic-settings==2.6.1
+chromadb==0.5.23
+# Chroma 0.5 uses the positional capture API; later PostHog majors changed it.
+posthog==3.25.0
+httpx==0.28.1

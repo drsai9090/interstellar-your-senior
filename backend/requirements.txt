@@ -16,6 +16,7 @@ sentence-transformers
 
 # ─── Vector database ──────────────────────────────────────────
 chromadb==0.5.23
+posthog==3.25.0
 
 # ─── Document parsing ─────────────────────────────────────────
 pypdf==5.1.0

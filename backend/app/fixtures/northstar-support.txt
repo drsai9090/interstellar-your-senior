@@ -1,0 +1,1 @@
+Northstar Studio is a fictional organisation. IT support is handled by the service desk at support@northstar.example, Monday to Friday from 09:00 to 17:00. Include the device tag and a description of the issue. Never send passwords. The .example address is fictional and cannot receive email.

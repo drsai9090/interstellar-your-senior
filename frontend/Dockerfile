@@ -1,5 +1,5 @@
 # ── Stage 1: build the React app ──────────────────────────────────────────────
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -9,11 +9,9 @@ RUN npm ci
 COPY . .
 
 # VITE_ vars are baked into the JS bundle at build time.
-# Override these args when building for production/Railway.
+# Standalone frontend only; the root Dockerfile serves the same-origin demo.
 ARG VITE_API_URL=http://localhost:8000
-ARG VITE_API_KEY=yoursenior-sai-2025
 ENV VITE_API_URL=$VITE_API_URL
-ENV VITE_API_KEY=$VITE_API_KEY
 
 RUN npm run build
 

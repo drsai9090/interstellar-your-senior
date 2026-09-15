@@ -11,13 +11,12 @@ router = APIRouter(prefix="/query", tags=["Query"])
 @router.post("", response_model=QueryResponse)
 async def query(request: QueryRequest):
     """
-    Ask Your Senior a question. Returns an answer, confidence score,
-    confidence tier (high / partial / low), and cited source chunks.
+    Ask a question. Returns validated citations or an explicit unsupported answer.
     """
     try:
         return await answer_question(request.question, request.top_k)
-    except Exception as exc:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Your Senior encountered an error: {str(exc)}",
+            detail="Document retrieval is unavailable. Please try again later.",
         )

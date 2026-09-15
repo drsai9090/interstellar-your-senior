@@ -8,11 +8,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
-    # Auth
-    your_senior_api_key: str
+    # Public demo never uses private storage or calls a paid model.
+    demo_mode: bool = True
+    static_dir: str = ""
+    # Operator/CLI credential only; never deliver to a browser.
+    your_senior_api_key: str = ""
 
     # Anthropic
-    anthropic_api_key: str
+    anthropic_api_key: str = ""
     claude_model: str = "claude-sonnet-4-5"
 
     # Google Drive (service account for document ingestion)
@@ -20,17 +23,11 @@ class Settings(BaseSettings):
     google_drive_folder_id: str = ""
 
     # ChromaDB
-    chroma_persist_dir: str = "/data/chroma"
+    chroma_persist_dir: str = "./chromadb_store"
     chroma_collection_name: str = "your_senior_docs"
 
     # Server
-    backend_host: str = "0.0.0.0"
-    backend_port: int = 8000
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
-
-    # RAG confidence thresholds
-    confidence_high: float = 0.75
-    confidence_low: float = 0.40
 
     # RAG retrieval
     top_k_chunks: int = 5
