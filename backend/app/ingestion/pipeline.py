@@ -4,11 +4,10 @@ import uuid
 from datetime import datetime, timezone
 
 from app.config import get_settings
-from app.db.chroma import get_collection
 from app.ingestion.chunker import chunk_document
 from app.ingestion.gdrive import download_file, list_drive_files
 from app.ingestion.registry import get_parser
-from app.rag.embedder import embed_texts
+from app.ingestion.storage import replace_document_chunks
 
 # In-memory job store — sufficient for MVP; swap for Redis or a DB in production.
 _jobs: dict[str, dict] = {}
@@ -37,7 +36,6 @@ async def run_ingestion_job(job_id: str, folder_id: str | None = None) -> None:
         files = await list_drive_files(settings.google_service_account_json, target_folder)
         _jobs[job_id]["documents_found"] = len(files)
 
-        collection = get_collection()
         total_chunks = 0
 
         for file_meta in files:
@@ -64,22 +62,7 @@ async def run_ingestion_job(job_id: str, folder_id: str | None = None) -> None:
             if not chunks:
                 continue
 
-            try:
-                existing = collection.get(where={"doc_id": doc_id})
-                if existing["ids"]:
-                    collection.delete(ids=existing["ids"])
-            except Exception:
-                pass
-
-            texts = [c.content for c in chunks]
-            embeddings = await embed_texts(texts)
-
-            collection.add(
-                ids=[c.chunk_id for c in chunks],
-                documents=texts,
-                embeddings=embeddings,
-                metadatas=[c.metadata for c in chunks],
-            )
+            await replace_document_chunks(chunks)
             total_chunks += len(chunks)
             _jobs[job_id]["chunks_created"] = total_chunks
 
@@ -94,7 +77,7 @@ async def run_ingestion_job(job_id: str, folder_id: str | None = None) -> None:
         _jobs[job_id].update(
             {
                 "status": "failed",
-                "error": str(exc),
+                "error": "Ingestion failed; inspect the operator environment and document format.",
                 "completed_at": datetime.now(timezone.utc).isoformat(),
             }
         )

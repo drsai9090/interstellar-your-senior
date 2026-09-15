@@ -7,7 +7,6 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from app.config import get_settings
 from app.db.chroma import get_collection, is_connected
-from app.ingestion.pipeline import run_ingestion_job
 from app.models.schemas import (
     ChromaDBStatus,
     ConfidenceDecayStatus,
@@ -100,6 +99,7 @@ async def delete_document(doc_id: str):
 @router.post("/documents/{doc_id}/reindex")
 async def reindex_document(doc_id: str, background_tasks: BackgroundTasks):
     """Re-run ingestion for all documents (MVP: full re-sync from Drive)."""
+    from app.ingestion.pipeline import run_ingestion_job
     job_id = str(uuid.uuid4())
     background_tasks.add_task(run_ingestion_job, job_id)
     return {
@@ -112,7 +112,7 @@ async def reindex_document(doc_id: str, background_tasks: BackgroundTasks):
 
 @router.get("/query-log", response_model=list[QueryLogEntry])
 async def get_query_log():
-    """Return the last N questions asked, with confidence scores."""
+    """Return the last N questions asked, with evidence status."""
     return [QueryLogEntry(**entry) for entry in _query_log]
 
 

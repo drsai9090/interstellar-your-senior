@@ -12,6 +12,10 @@ from app.config import get_settings
 def get_chroma_client() -> chromadb.PersistentClient:
     """Return a cached ChromaDB persistent client (created once at startup)."""
     settings = get_settings()
+    if settings.demo_mode:
+        return chromadb.EphemeralClient(
+            settings=ChromaSettings(anonymized_telemetry=False)
+        )
     return chromadb.PersistentClient(
         path=settings.chroma_persist_dir,
         settings=ChromaSettings(anonymized_telemetry=False),
@@ -23,7 +27,7 @@ def get_collection() -> chromadb.Collection:
     settings = get_settings()
     client = get_chroma_client()
     return client.get_or_create_collection(
-        name=settings.chroma_collection_name,
+        name="interstellar_synthetic_v1" if settings.demo_mode else settings.chroma_collection_name,
         metadata={"hnsw:space": "cosine"},  # cosine similarity → scores in [0, 1]
     )
 

@@ -1,309 +1,71 @@
-# Your Senior
+# Interstellar — Your Senior
 
-[![Python](https://img.shields.io/badge/Python-3.11-3776ab?logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![React](https://img.shields.io/badge/React-18-61dafb?logo=react&logoColor=black)](https://react.dev/)
-[![Docker](https://img.shields.io/badge/Docker-ready-2496ed?logo=docker&logoColor=white)](https://www.docker.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-c9a84c)](LICENSE)
+An evidence-backed document assistant prototype, extending [Your Senior](https://github.com/Saisugun9090/YOUR-SENIOR-) under its [MIT license](LICENSE).
 
-An AI-powered RAG agent that reads your company's internal documents and answers questions like a trusted senior employee.
+**The default demo uses three synthetic documents and an author-written provider stub. It is not live AI, a recorded model response, or a real company knowledge base.** The five sample questions show supported, partial and unsupported answers. Other questions, including paraphrases, abstain. No employer or client information is included.
 
-Upload PDFs, Word docs, Google Docs, or plain text files. Ask anything. Get cited, confidence-rated answers — or a clear "I don't know" when the data isn't there.
+## Try it locally
 
----
+Python 3.12 and Node.js 22 are the tested runtime targets. From the repository root on Windows:
 
-## Screenshot
-
-> _Add a screenshot of the chat interface here._
-
-![Your Senior chat interface](docs/screenshot.png)
-
----
-
-## How it works
-
-```
-Documents → Parse → Chunk → Embed → ChromaDB
-                                         ↓
-User question → Embed → Retrieve top-K chunks → Claude → Cited answer
-```
-
-Every answer is scored on a three-tier confidence scale:
-
-| Confidence | Threshold | Behaviour |
-|---|---|---|
-| **HIGH** | > 75 % | Full answer with source citations |
-| **PARTIAL** | 40 – 75 % | Answer with a confidence warning |
-| **LOW** | < 40 % | Answers with partial infomation is any relavent present |
-
----
-
-## Tech stack
-
-| Layer | Technology |
-|---|---|
-| API | FastAPI + uvicorn |
-| LLM | Anthropic Claude (`claude-sonnet-4-5`) |
-| Embeddings | `sentence-transformers` — `all-MiniLM-L6-v2` (local, no API key) |
-| Vector DB | ChromaDB (persistent, cosine similarity) |
-| Parsers | pypdf · python-docx · Google Drive API · plain text |
-| Frontend | React 18 + Vite + Tailwind CSS |
-| Auth | API key middleware (swap to OAuth in one file) |
-| Containers | Docker + docker-compose |
-
----
-
-## Quick start (Docker)
-
-**Prerequisites:** Docker Desktop installed and running.
-
-```bash
-# 1. Clone the repo
-git clone <repo-url>
-cd your-senior
-
-# 2. Create your environment file
-cp backend/.env.example backend/.env
-# Open backend/.env and fill in ANTHROPIC_API_KEY and YOUR_SENIOR_API_KEY
-
-# 3. Build and start both services
-docker compose up --build
-
-# Backend:  http://localhost:8000
-# Frontend: http://localhost:3000
-# API docs: http://localhost:8000/docs
-```
-
-ChromaDB data is stored in a named Docker volume (`chromadb_data`) and survives container restarts.
-
-To stop: `docker compose down`
-To wipe the vector store too: `docker compose down -v`
-
----
-
-## Local development (no Docker)
-
-### Backend
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate     # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env         # fill in ANTHROPIC_API_KEY and YOUR_SENIOR_API_KEY
-uvicorn app.main:app --reload --port 8000
-```
-
-### Frontend
-
-```bash
+```powershell
+python -m venv .venv
+.venv/Scripts/python.exe -m pip install -r backend/requirements-demo.txt
 cd frontend
-npm install
-npm run dev        # http://localhost:5173
+npm.cmd ci
+npm.cmd run build
+cd ..
+$env:DEMO_MODE = 'true'
+$env:STATIC_DIR = (Resolve-Path frontend/dist).Path
+.venv/Scripts/python.exe -m uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8000
 ```
 
-The frontend reads `VITE_API_URL` (defaults to `http://localhost:8000`) and `VITE_API_KEY` from a `.env` file in the `frontend/` directory. Create one if you need to override:
+Open [the demo](http://localhost:8000). No `.env`, paid model, embedding download, Google account or cloud subscription is needed. On macOS/Linux use `.venv/bin/python` and set `DEMO_MODE=true STATIC_DIR="$PWD/frontend/dist"` for the uvicorn command.
 
-```env
-VITE_API_URL=http://localhost:8000
-VITE_API_KEY=<your-api-key>
+For frontend development, run the backend on port 8000 and `npm run dev` in `frontend`; Vite proxies API requests. Browser builds contain no operator/provider key. `VITE_API_URL` is optional for an explicitly configured separate backend origin.
+
+## What the slice does
+
+```text
+Bundled synthetic TXT → TXT parser → fixed paragraph chunks
+  → deterministic hashed word vectors → memory-only Chroma
+  → actual top-K retrieval → author-written provider stub
+  → strict Pydantic validation + citation-ID checks → answer or abstention
 ```
 
----
+The React/JSX UI lets visitors inspect the complete corpus and the exact cited excerpts. Results carry `response_mode: fixture`. There are no confidence percentages: source similarity and a model's self-assessment do not establish accuracy.
 
-## Ingesting documents
+The output validator rejects malformed JSON, extra fields, invalid statuses, wrong types, empty answers, duplicate or unknown citation IDs and unsupported answers that claim citations. Supported/partial answers must cite retrieved IDs. Invalid provider output and provider errors return a neutral unsupported answer with no fallback sources or raw provider text. **Citation membership does not prove factual support**; live answers still need evaluated grounding and human review.
 
-### Option A — File upload (no Google Drive needed)
+## Access and storage boundaries
 
-```bash
-curl -X POST http://localhost:8000/ingest/upload \
-  -H "X-API-Key: <your-api-key>" \
-  -F "file=@/path/to/document.pdf"
+- `DEMO_MODE=true` is the default. `/query`, `/demo` and health/docs are public. Every `/ingest` and `/admin` route is disabled, even with an operator key.
+- The demo reads only the three checked-in TXT files. Its ephemeral Chroma collection is rebuilt at startup and never opens the configured private persistent directory. Public questions are not added to the private query log.
+- Queries are limited to 2,000 characters, 16 KiB request bodies and 60 requests per minute per worker. This global budget can be exhausted by one visitor; it is not a distributed quota or monetary cap.
+- For **private local development**, install `backend/requirements.txt`, set `DEMO_MODE=false`, and configure a randomly generated operator key of at least 32 characters as `YOUR_SENIOR_API_KEY`. Supply it only from an operator/CLI using `X-API-Key`. Never put it in a frontend env file or build argument. Missing/short keys disable protected routes; incorrect keys receive 401.
+- Private mode keeps the existing sentence-transformer, persistent Chroma and Anthropic path. It needs server-side `ANTHROPIC_API_KEY` and may download `all-MiniLM-L6-v2`. No paid live-model call has been validated in this milestone. It is not a multi-user authentication design.
+- Upload, pasted text and Drive ingestion now prepare embeddings and add replacement chunks before deleting the old chunks. A failure before successful insertion preserves the previous working set. Chroma does not provide an atomic generation switch here: interrupted insertion/deletion can leave duplicate generations. Keep ingestion single-worker and private until transactional publication and recovery are verified.
+
+## Run the evidence checks
+
+```powershell
+cd backend
+../.venv/Scripts/python.exe -m unittest discover -s tests -v
+../.venv/Scripts/python.exe -m app.evaluate --output ../outputs/evaluation.json
+cd ../frontend
+npm.cmd run build
 ```
 
-Accepts `.pdf`, `.docx`, `.txt`. Max 50 MB. Re-uploading the same filename replaces its previous chunks cleanly.
+The [evaluation cases](backend/app/fixtures/evaluation-cases.json) check three supported questions, one partial answer, missing/out-of-corpus information, an injected instruction and an unsupported paraphrase. [Evaluation output](outputs/evaluation.json) records corpus/fixture/prompt hashes, dependency versions, configuration and actual per-case outcomes. These are regression checks for authored scenarios, **not a measured AI quality score**. The injection scenario exercises the stub, not live-model resistance.
 
-### Option B — Raw text via JSON
+[Evidence report](outputs/evidence-report.md) records actual checks and remaining gaps. GitHub Actions runs the same offline suite and build; a workflow file alone is not proof of a passing run.
 
-```bash
-curl -X POST http://localhost:8000/ingest/text \
-  -H "X-API-Key: <your-api-key>" \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Your content here...", "filename": "my-doc.txt"}'
-```
+## Corpus provenance
 
-### Option C — Google Drive sync
+`backend/app/fixtures/northstar-*.txt` and `answers.json` were authored for this personal prototype on 15 September 2026 and are covered by this repository's MIT license. Northstar Studio, its policies and `.example` email address are fictional. The displayed ingestion date is a fixed fixture timestamp. The documents contain no real employee, employer, client or legal case data.
 
-```bash
-# 1. Place your service account JSON at backend/secrets/service-account.json
-# 2. Set GOOGLE_DRIVE_FOLDER_ID in backend/.env
+## Deployment and next milestone
 
-curl -X POST http://localhost:8000/ingest/drive \
-  -H "X-API-Key: <your-api-key>" \
-  -H "Content-Type: application/json" \
-  -d '{"folder_id": "your-google-drive-folder-id"}'
+A [single-container demo and Azure Container Apps template](deploy/README.md) are prepared. Azure provisioning needs an existing authorised environment and an approved cost ceiling. No cloud deployment is implied by local verification.
 
-# Poll for status
-curl http://localhost:8000/ingest/status/<job_id> \
-  -H "X-API-Key: <your-api-key>"
-```
-
----
-
-## API reference
-
-All endpoints (except `/health`, `/docs`, `/redoc`) require the `X-API-Key` header.
-
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/health` | Health check — no auth required |
-| `POST` | `/query` | Ask a question |
-| `POST` | `/ingest/upload` | Upload a PDF / DOCX / TXT file |
-| `POST` | `/ingest/text` | Ingest raw text as JSON |
-| `POST` | `/ingest/drive` | Start a Google Drive sync job |
-| `GET` | `/ingest/status/{job_id}` | Poll a Drive sync job |
-| `GET` | `/admin/documents` | List all indexed documents |
-| `DELETE` | `/admin/documents/{doc_id}` | Delete a document's chunks |
-| `POST` | `/admin/documents/{doc_id}/reindex` | Re-ingest a document |
-| `GET` | `/admin/query-log` | Last 50 queries |
-| `GET` | `/admin/system-health` | ChromaDB stats + uptime |
-
-Full interactive docs at `http://localhost:8000/docs`.
-
-### Example: ask a question
-
-```bash
-curl -X POST http://localhost:8000/query \
-  -H "X-API-Key: <your-api-key>" \
-  -H "Content-Type: application/json" \
-  -d '{"question": "What is our parental leave policy?"}'
-```
-
-Response:
-
-```json
-{
-  "answer": "The parental leave policy grants ...",
-  "confidence_score": 0.82,
-  "confidence_tier": "high",
-  "sources": [
-    {
-      "source_file": "hr-handbook.pdf",
-      "section_heading": "Leave Entitlements",
-      "relevance_score": 0.91,
-      "content": "..."
-    }
-  ]
-}
-```
-
----
-
-## Environment variables
-
-All variables live in `backend/.env`. See `backend/.env.example` for the full list with descriptions.
-
-| Variable | Required | Description |
-|---|---|---|
-| `YOUR_SENIOR_API_KEY` | Yes | Shared secret for all API requests |
-| `ANTHROPIC_API_KEY` | Yes | Claude API key |
-| `CLAUDE_MODEL` | No | Defaults to `claude-sonnet-4-5` |
-| `CHROMA_PERSIST_DIR` | No | Where ChromaDB stores data (default `./chromadb_store`) |
-| `CONFIDENCE_HIGH` | No | High-confidence threshold (default `0.75`) |
-| `CONFIDENCE_LOW` | No | Low-confidence threshold (default `0.40`) |
-| `TOP_K_CHUNKS` | No | Chunks retrieved per query (default `5`) |
-| `MAX_CHUNK_TOKENS` | No | Max tokens per chunk (default `512`) |
-| `GOOGLE_SERVICE_ACCOUNT_JSON` | Drive only | Path to service account JSON |
-| `GOOGLE_DRIVE_FOLDER_ID` | Drive only | Drive folder to sync from |
-
----
-
-## Deploy to Railway
-
-Railway runs each service from its own Dockerfile. No changes needed — the files are already there.
-
-1. Create a new Railway project and add two services: `backend` and `frontend`.
-2. Point each service at the correct subdirectory (`./backend` and `./frontend`).
-3. Set environment variables for the backend service in Railway's dashboard (same as `.env`).
-4. For the frontend service, set these build variables:
-   ```
-   VITE_API_URL=https://your-backend.up.railway.app
-   VITE_API_KEY=<your-api-key>
-   ```
-5. Add a Railway volume mounted at `/app/chromadb_store` to persist ChromaDB data across deploys.
-
----
-
-## Project structure
-
-```
-your-senior/
-├── backend/
-│   ├── app/
-│   │   ├── main.py              # FastAPI app, middleware, router registration
-│   │   ├── config.py            # pydantic-settings: all env vars in one place
-│   │   ├── middleware/
-│   │   │   └── auth.py          # API key middleware (swap for OAuth here)
-│   │   ├── routers/
-│   │   │   ├── query.py         # POST /query
-│   │   │   ├── ingest.py        # POST /ingest/*
-│   │   │   ├── admin.py         # GET/DELETE /admin/*
-│   │   │   └── health.py        # GET /health
-│   │   ├── rag/
-│   │   │   ├── engine.py        # Retrieve → Claude → confidence score
-│   │   │   ├── retriever.py     # ChromaDB similarity search
-│   │   │   └── embedder.py      # sentence-transformers (all-MiniLM-L6-v2)
-│   │   ├── ingestion/
-│   │   │   ├── chunker.py       # Semantic chunking with sentence-split fallback
-│   │   │   ├── pipeline.py      # Google Drive sync job runner
-│   │   │   ├── gdrive.py        # Google Drive API client
-│   │   │   ├── registry.py      # Parser lookup by extension / MIME type
-│   │   │   └── parsers/
-│   │   │       ├── base.py      # BaseParser abstract class
-│   │   │       ├── pdf_parser.py
-│   │   │       ├── docx_parser.py
-│   │   │       ├── gdocs_parser.py
-│   │   │       └── txt_parser.py
-│   │   ├── db/
-│   │   │   └── chroma.py        # ChromaDB client + collection singleton
-│   │   └── models/
-│   │       └── schemas.py       # Pydantic request / response models
-│   ├── secrets/                 # Google service account JSON (gitignored)
-│   ├── requirements.txt
-│   ├── Dockerfile
-│   └── .env.example
-│
-├── frontend/
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── Chat.jsx         # Main chat interface
-│   │   │   └── Admin.jsx        # Document manager + query log + health panel
-│   │   ├── components/
-│   │   │   ├── Sidebar.jsx
-│   │   │   ├── ChatMessage.jsx
-│   │   │   ├── ConfidenceBadge.jsx
-│   │   │   ├── SourceCard.jsx
-│   │   │   ├── DocumentRow.jsx
-│   │   │   ├── QueryLogTable.jsx
-│   │   │   └── HealthPanel.jsx
-│   │   └── api/
-│   │       └── client.js        # Typed fetch wrapper for all API calls
-│   ├── nginx.conf               # SPA routing + static asset caching
-│   ├── Dockerfile
-│   └── tailwind.config.js       # navy + gold colour families
-│
-├── docker-compose.yml
-├── CONTRIBUTING.md
-├── LICENSE
-└── README.md
-```
-
----
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code conventions, and the PR process.
-
-## License
-
-[MIT](LICENSE) © 2026 Sai
+Next: run a separately labelled live-provider evaluation on held-out synthetic questions, assess answer support rather than just citation IDs, and verify atomic storage replacement and per-user identity before private document hosting.

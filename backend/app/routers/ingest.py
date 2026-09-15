@@ -6,11 +6,7 @@ from pathlib import Path
 from fastapi import APIRouter, BackgroundTasks, File, HTTPException, UploadFile
 
 from app.config import get_settings
-from app.db.chroma import get_collection
-from app.ingestion.chunker import chunk_document
 from app.ingestion.parsers.base import ParsedDocument
-from app.ingestion.pipeline import get_job_status, run_ingestion_job
-from app.ingestion.registry import get_parser
 from app.models.schemas import (
     IngestRequest,
     IngestResponse,
@@ -18,7 +14,7 @@ from app.models.schemas import (
     TextIngestRequest,
     UploadIngestResponse,
 )
-from app.rag.embedder import embed_texts
+from app.ingestion.storage import replace_document_chunks
 
 router = APIRouter(prefix="/ingest", tags=["Ingestion"])
 
@@ -36,6 +32,7 @@ _MAX_UPLOAD_BYTES = 50 * 1024 * 1024  # 50 MB
 @router.post("/drive", response_model=IngestResponse)
 async def ingest_from_drive(request: IngestRequest, background_tasks: BackgroundTasks):
     """Start a background job that pulls files from Google Drive and indexes them."""
+    from app.ingestion.pipeline import run_ingestion_job
     job_id = str(uuid.uuid4())
     background_tasks.add_task(run_ingestion_job, job_id, request.folder_id)
     return IngestResponse(
@@ -48,6 +45,7 @@ async def ingest_from_drive(request: IngestRequest, background_tasks: Background
 @router.get("/status/{job_id}", response_model=IngestResponse)
 async def ingestion_status(job_id: str):
     """Check the status of a running or completed ingestion job."""
+    from app.ingestion.pipeline import get_job_status
     job = get_job_status(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail=f"Job '{job_id}' not found.")
@@ -69,6 +67,8 @@ async def upload_and_ingest(file: UploadFile = File(...)):
     Upload a PDF, DOCX, or TXT file and ingest it immediately.
     Re-uploading the same filename replaces its previous chunks.
     """
+    from app.ingestion.chunker import chunk_document
+    from app.ingestion.registry import get_parser
     filename = file.filename or "uploaded_file"
     ext = Path(filename).suffix.lower()
 
@@ -86,7 +86,7 @@ async def upload_and_ingest(file: UploadFile = File(...)):
     if not parser:
         raise HTTPException(status_code=400, detail=f"No parser registered for '{ext}'.")
 
-    content = await file.read()
+    content = await file.read(_MAX_UPLOAD_BYTES + 1)
 
     if len(content) == 0:
         raise HTTPException(status_code=400, detail="Uploaded file is empty.")
@@ -102,7 +102,7 @@ async def upload_and_ingest(file: UploadFile = File(...)):
     except Exception as exc:
         raise HTTPException(
             status_code=422,
-            detail=f"Could not parse '{filename}': {exc}",
+            detail="Could not parse the uploaded document.",
         )
 
     if not parsed.paragraphs:
@@ -126,23 +126,7 @@ async def upload_and_ingest(file: UploadFile = File(...)):
             message="Document produced no chunks after splitting.",
         )
 
-    collection = get_collection()
-    try:
-        existing = collection.get(where={"doc_id": doc_id})
-        if existing["ids"]:
-            collection.delete(ids=existing["ids"])
-    except Exception:
-        pass
-
-    texts = [c.content for c in chunks]
-    embeddings = await embed_texts(texts)
-
-    collection.add(
-        ids=[c.chunk_id for c in chunks],
-        documents=texts,
-        embeddings=embeddings,
-        metadatas=[c.metadata for c in chunks],
-    )
+    await replace_document_chunks(chunks)
 
     return UploadIngestResponse(
         filename=filename,
@@ -160,6 +144,7 @@ async def ingest_raw_text(request: TextIngestRequest):
     Ingest raw text as JSON — no file upload needed.
     Re-posting with the same filename replaces its previous chunks.
     """
+    from app.ingestion.chunker import chunk_document
     paragraphs = [p.strip() for p in request.text.split("\n\n") if p.strip()]
     if not paragraphs:
         return UploadIngestResponse(
@@ -193,23 +178,7 @@ async def ingest_raw_text(request: TextIngestRequest):
             message="Text produced no chunks after splitting.",
         )
 
-    collection = get_collection()
-    try:
-        existing = collection.get(where={"doc_id": doc_id})
-        if existing["ids"]:
-            collection.delete(ids=existing["ids"])
-    except Exception:
-        pass
-
-    texts = [c.content for c in chunks]
-    embeddings = await embed_texts(texts)
-
-    collection.add(
-        ids=[c.chunk_id for c in chunks],
-        documents=texts,
-        embeddings=embeddings,
-        metadatas=[c.metadata for c in chunks],
-    )
+    await replace_document_chunks(chunks)
 
     return UploadIngestResponse(
         filename=request.filename,

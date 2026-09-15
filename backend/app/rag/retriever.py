@@ -10,7 +10,7 @@ async def retrieve_chunks(
 ) -> tuple[list[ChunkSource], float]:
     """
     Embeds the question, queries ChromaDB for the closest chunks,
-    and returns (chunks, retrieval_confidence_score).
+    and returns (chunks, similarity signal). Similarity is not answer accuracy.
     """
     collection = get_collection()
     total = collection.count()
@@ -50,6 +50,7 @@ async def retrieve_chunks(
             chunk_id=chunk_id,
             content=doc,
             source_file=meta.get("source_file", "unknown"),
+            source_type=meta.get("source_type", "txt"),
             page_number=meta.get("page_number"),
             section_heading=meta.get("section_heading"),
             date_ingested=meta.get("date_ingested", ""),

@@ -2,20 +2,26 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class ConfidenceTier(str, Enum):
-    HIGH    = "high"     # score > CONFIDENCE_HIGH  → full answer + citations
-    PARTIAL = "partial"  # CONFIDENCE_LOW ≤ score ≤ CONFIDENCE_HIGH → partial answer
-    LOW     = "low"      # score < CONFIDENCE_LOW   → "I don't have a reliable answer, here is what I've found."
+AnswerStatus = Literal["supported", "partial", "unsupported"]
+
+
+class ModelAnswer(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True, str_strip_whitespace=True)
+    status: AnswerStatus
+    answer: str = Field(min_length=1, max_length=6000)
+    reason: str = Field(min_length=1, max_length=1000)
+    cited_chunk_ids: list[str] = Field(max_length=20)
 
 
 # ─── Query ────────────────────────────────────────────────────────────────────
 
 class QueryRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True, str_strip_whitespace=True)
     question: str = Field(..., min_length=1, max_length=2000)
     top_k: Optional[int] = Field(None, ge=1, le=20)
 
@@ -24,6 +30,7 @@ class ChunkSource(BaseModel):
     chunk_id: str
     content: str
     source_file: str
+    source_type: str = "txt"
     page_number: Optional[int] = None
     section_heading: Optional[str] = None
     date_ingested: str
@@ -35,8 +42,9 @@ class QueryResponse(BaseModel):
     query_id: str
     question: str
     answer: str
-    confidence_score: float
-    confidence_tier: ConfidenceTier
+    status: AnswerStatus
+    reason: str
+    response_mode: Literal["fixture", "live"]
     sources: list[ChunkSource]
     timestamp: datetime
     app: str = "Your Senior"
@@ -110,8 +118,7 @@ class DeleteDocumentResponse(BaseModel):
 class QueryLogEntry(BaseModel):
     query_id: str
     question: str
-    confidence_score: float
-    confidence_tier: ConfidenceTier
+    status: AnswerStatus
     chunks_retrieved: int
     timestamp: datetime
 
